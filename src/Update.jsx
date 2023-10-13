@@ -1,33 +1,28 @@
 import { useState } from 'react';
+import { useLoaderData } from 'react-router-dom';
 import FileBase64 from 'react-file-base64';
 import toast from 'react-hot-toast';
 
-const Home = () => {
-	const [mangoData, setMangoData] = useState({});
+const Update = () => {
+	const initialMangoData = useLoaderData();
+	const [mangoData, setMangoData] = useState(initialMangoData);
 	const [loading, setLoading] = useState();
-
-	const handleSubmit = async e => {
+	const handleSubmit = e => {
 		e.preventDefault();
-		const formData = new FormData(e.target);
-		e.target.reset();
-		const newData = {};
-		for (const data of formData.entries()) {
-			newData[data[0]] = data[1];
-		}
-		setMangoData({ ...mangoData, ...newData });
-		await fetch('http://localhost:5000/', {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
+		fetch(`http://localhost:5000/mango/${mangoData._id}`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(mangoData),
 		})
 			.then(res => res.json())
 			.then(data => {
-				if (data.insertedId) toast.success('Mango added successfully');
-				setMangoData({});
-			})
-			.catch(err => {
-				toast.error(err.message);
+				if (data.modifiedCount) {
+					toast.success('Data Modified successfully');
+				}
 			});
+	};
+	const handleChange = e => {
+		setMangoData({ ...mangoData, [e.target.name]: e.target.value });
 	};
 
 	const getFiles = async file => {
@@ -47,31 +42,28 @@ const Home = () => {
 				setMangoData({ ...mangoData, imageURL: data.data.display_url });
 			});
 	};
-	console.log(mangoData);
 	return (
-		<div className="container">
+		<div>
 			<h1 className="font-semibold text-2xl text-center my-4">
-				Mango data create
+				Update mango data
 			</h1>
 			{loading && <p className="bg-green-700 text-white">Loading</p>}
 			<form onSubmit={handleSubmit} className="max-w-lg mx-auto space-y-4">
 				<input
 					type="text"
 					name="name"
-					onBlur={e =>
-						setMangoData({ ...mangoData, [e.target.name]: e.target.value })
-					}
+					onChange={handleChange}
 					placeholder="Mango name"
 					className="input input-bordered w-full max-w-lg"
+					value={mangoData.name}
 				/>
 				<input
 					type="text"
 					name="price"
-					onBlur={e =>
-						setMangoData({ ...mangoData, [e.target.name]: e.target.value })
-					}
+					onChange={handleChange}
 					placeholder="Mango price"
 					className="input input-bordered w-full max-w-lg"
+					value={mangoData.price}
 				/>
 				<FileBase64 onDone={getFiles} />
 				<br />
@@ -79,9 +71,8 @@ const Home = () => {
 					<input type="submit" value="submit" className="btn btn-accent" />
 				</div>
 			</form>
-			{/* )} */}
 		</div>
 	);
 };
 
-export default Home;
+export default Update;
